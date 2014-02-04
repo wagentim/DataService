@@ -26,22 +26,54 @@ public class DownloadTable implements Table{
 		em = emf.createEntityManager();
 	}
 	
+	/**
+	 * Persist entity
+	 * <p>
+	 * If the entity not exist before, then persist the whole object. Otherwise just update some information
+	 */
 	@Override
-	public synchronized boolean persis(Object entitiy) {
+	public synchronized boolean persist( Object entity ) {
 		
-		if( !(entitiy instanceof DownloadFile ) )
+		if( !(entity instanceof DownloadFile ) )
 		{
-			log.log("Persis Object Type is error. Prefer " + DownloadFile.class.getName() + ", but get" + entitiy.getClass().getName(), Log.LEVEL_CRITICAL_ERROR);
+			log.log("Persis Object Type is error. Prefer " + DownloadFile.class.getName() + ", but get" + entity.getClass().getName(), Log.LEVEL_CRITICAL_ERROR);
 			return false;
 		}
 		
-		em.getTransaction().begin();
-		em.persist(entitiy);
-		em.getTransaction().commit();
+		if( isAlreadyExist((DownloadFile) entity) )
+		{
+			updateValue((DownloadFile) entity);
+			
+		}else
+		{
+			em.getTransaction().begin();
+			em.persist(entity);
+			em.getTransaction().commit();
+		}
 		
 		return true;
 	}
 	
+	private void updateValue(DownloadFile entity) {
+		
+		DownloadFile savedFile = em.find(DownloadFile.class, entity.getID());
+		
+		if( null == savedFile )
+		{
+			log.log("Cannot file saved Entity: " + entity.getID(), Log.LEVEL_CRITICAL_ERROR);
+			
+			return;
+		}
+		em.getTransaction().begin();
+		savedFile.setUnFinishedBlock(entity.getUnFinishedBlock());
+		em.getTransaction().commit();
+	}
+
+	private boolean isAlreadyExist(final DownloadFile entity) {
+		
+		return entity.getID() <= -1 ? false : true;
+	}
+
 	public synchronized boolean persis(final List<DownloadFile> entities)
 	{
 		if( null == entities || entities.isEmpty() )
@@ -54,11 +86,27 @@ public class DownloadTable implements Table{
 		
 		for( DownloadFile df : entities )
 		{
-			em.persist(df);
+			if( !isAlreadyExist(df) )
+			{
+				em.persist(df);
+			}else
+			{
+				DownloadFile tmp = em.find(DownloadFile.class, df.getID());
+				
+				if( null == tmp )
+				{
+					log.log("Cannot file saved Entity: " + df.getID(), Log.LEVEL_CRITICAL_ERROR);
+					continue;
+				}
+				
+				tmp.setUnFinishedBlock(df.getUnFinishedBlock());
+			}
 		}
 		
 		em.getTransaction().commit();
 		
 		return true;
 	}
+	
+	
 }
