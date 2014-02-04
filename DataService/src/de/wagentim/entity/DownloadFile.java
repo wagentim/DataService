@@ -27,6 +27,7 @@ public class DownloadFile
 	private MyHeader[] headers = new MyHeader[]{};
 	private String method = "Get";
 	private Vector<String> unFinishedBlock = null;
+	private String uniqueMark = "";
 	
 	public DownloadFile()
 	{
@@ -143,5 +144,13 @@ public class DownloadFile
 	public long getID()
 	{
 		return id;
+	}
+
+	public String getUniqueMark() {
+		return uniqueMark;
+	}
+
+	public void setUniqueMark(String uniqueMark) {
+		this.uniqueMark = uniqueMark;
 	}
 }
